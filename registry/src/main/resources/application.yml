@@ -1,3 +1,22 @@
+##服务名
+#spring:
+#  application:
+#    name: spring-cloud-eureka
+##暴露的端口号
+#server:
+#  port: 8761
+#eureka:
+#  instance:
+#    hostname: localhost
+#  client:
+#    serviceUrl:
+#      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+#    fetch-registry: false
+#    register-with-eureka: false
+##本身也会被当做Client,所以false来表明自己是一个eureka server.
+
+
+#高可用服务注册中心
 #服务名
 spring:
   application:
@@ -7,12 +26,15 @@ server:
   port: 8761
 eureka:
   instance:
-    hostname: localhost
+    hostname: peer1
   client:
     serviceUrl:
-      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
-    fetch-registry: false
-    register-with-eureka: false
+      defaultZone: http://peer2:8760/eureka/,http://peer3:8759/eureka/
+#    fetch-registry: false
+#    register-with-eureka: false
 #本身也会被当做Client,所以false来表明自己是一个eureka server.
+#做注册中心集群的时候可以设置为true,这样其他注册中心就会当作服务进行注册,而且会在available-replicas中
+#但是(true,false)没看出有什么影响，我还在研究.....
+
 
 

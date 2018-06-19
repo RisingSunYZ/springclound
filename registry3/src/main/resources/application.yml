@@ -1,0 +1,19 @@
+#服务名
+spring:
+  application:
+    name: spring-cloud-eureka
+#暴露的端口号
+server:
+  port: 8759
+eureka:
+  instance:
+    hostname: peer3
+  client:
+    serviceUrl:
+      defaultZone: http://peer1:8761/eureka/,http://peer2:8760/eureka/
+#    fetch-registry: false
+#    register-with-eureka: false
+#本身也会被当做Client,所以false来表明自己是一个eureka server.
+#只要有一条边将节点连接，就可以进行信息传播与同步
+
+
