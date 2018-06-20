@@ -37,4 +37,46 @@ eureka:
 #但是(true,false)没看出有什么影响，我还在研究.....
 
 
+#客户端注册流程(Eureka源码分析)
+#在应用主类中配置了@EnableDiscoveryClient注解
+#在application.properties中用eureka.client.serviceUrl.defaultZone参数指定了服务注册中心的位置
+#
+#
+#region、Zone
+#客户端依次加载了两个内容，第一个是Region，第二个是Zone
+#通过getRegion函数，它从配置中读取了一个Region返回，所以一个微服务应用只可以属于一个Region，
+#如果不特别配置，就默认为default。若我们要自己设置，可以通过eureka.client.region属性来定义。
+#当我们没有特别为Region配置Zone的时候，将默认采用defaultZone，
+#这也是我们之前配置参数eureka.client.serviceUrl.defaultZone的由来。
+#若要为应用指定Zone，我们可以通过eureka.client.availability-zones属性来进行设置。
+#从该函数的return内容，我们可以Zone是可以有多个的，并且通过逗号分隔来配置。由此，我们可以判断Region与Zone是一对多的关系。
+#
+#ServiceUrls
+#在获取了Region和Zone信息之后，才开始真正加载Eureka Server的具体地址
+#当客户端在服务列表中选择实例进行访问时，对于Zone和Region遵循这样的规则：
+#优先访问同自己一个Zone中的实例，其次才访问其他Zone中的实例。
+#通过Region和Zone的两层级别定义，配合实际部署的物理结构，我们就可以有效的设计出区域性故障的容错集群。
+#
+#服务注册 服务获取与服务续约(定时任务,REST的请求)
+#“服务获取”相对于“服务续约”更为独立，“服务续约”与“服务注册”在同一个if逻辑中，
+#这个不难理解，服务注册到Eureka Server后，自然需要一个心跳去续约，防止被剔除，所以他们肯定是成对出现的。
+#从源码中，我们可以清楚看到了，对于服务续约相关的时间控制参数：
+#eureka.instance.lease-renewal-interval-in-seconds=30
+#eureka.instance.lease-expiration-duration-in-seconds=90
+#
+#“服务获取”的逻辑在独立的一个if判断中，其判断依据就是我们之前所提到的eureka.client.fetch-registry=true参数，它默认是为true的，大部分情况下我们不需要关心
+#为了定期的更新客户端的服务清单，以保证服务访问的正确性，
+#“服务获取”的请求不会只限于服务启动，而是一个定时执行的任务
+#从源码中我们可以看到任务运行中的registryFetchIntervalSeconds参数对应eureka.client.registry-fetch-interval-seconds=30配置参数，它默认为30秒。
+#
+#
+#服务注册中心处理
+#通过上面的源码分析，可以看到所有的交互都是通过REST的请求来发起的。
+#在注册函数中，先调用publishEvent函数，将该新服务注册的事件传播出去，
+#然后调用com.netflix.eureka.registry.AbstractInstanceRegistry父类中的注册实现，
+#将InstanceInfo中的元数据信息存储在一个ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>>对象中，
+#它是一个两层Map结构，第一层的key存储服务名：InstanceInfo中的appName属性，第二层的key存储实例名：InstanceInfo中的instanceId属性。
+
+
+
 
